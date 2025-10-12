@@ -1,0 +1,11 @@
+use_frameworks!
+
+target 'CoreGPX_Example' do
+  pod 'CoreGPX', :path => '../'
+
+  target 'CoreGPX_Tests' do
+    inherit! :search_paths
+
+    
+  end
+end

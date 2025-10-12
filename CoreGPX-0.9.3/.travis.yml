@@ -1,0 +1,44 @@
+# references:
+# * https://www.objc.io/issues/6-build-tools/travis-ci/
+# * https://github.com/supermarin/xcpretty#usage
+
+os: osx
+osx_image: xcode11.3
+language: swift
+env: 
+  global:
+  - LC_CTYPE=en_US.UTF-8
+  - LANG=en_US.UTF-8
+  - WORKSPACE=Example/CoreGPX.xcworkspace
+  - IOS_FRAMEWORK_SCHEME="CoreGPX"
+  - MACOS_FRAMEWORK_SCHEME="CoreGPX-macOS"
+  - WATCHOS_FRAMEWORK_SCHEME="CoreGPX-watchOS"
+  - EXAMPLE_SCHEME="CoreGPX-Example"
+  - TEST_SCHEME="CoreGPX Tests"
+  matrix:
+  - DESTINATION="OS=6.1.1,name=Apple Watch Series 5 - 44mm" SCHEME="$WATCHOS_FRAMEWORK_SCHEME" RUN_TESTS="NO"  BUILD_EXAMPLE="NO"  SDK="watchsimulator6.1"
+  
+  - DESTINATION="OS=13.3,name=iPhone 11"                  SCHEME="$IOS_FRAMEWORK_SCHEME"     RUN_TESTS="NO"  BUILD_EXAMPLE="YES" SDK="iphonesimulator13.2"
+  - DESTINATION="OS=13.3,name=iPhone 11"                  SCHEME="$IOS_FRAMEWORK_SCHEME"     RUN_TESTS="YES" BUILD_EXAMPLE="NO"  SDK="iphonesimulator13.2"
+  - DESTINATION="OS=10.3.1,name=iPhone 6 Plus"              SCHEME="$IOS_FRAMEWORK_SCHEME"     RUN_TESTS="NO"  BUILD_EXAMPLE="NO"  SDK="iphonesimulator13.2"
+  
+  - DESTINATION="arch=x86_64" SCHEME="$MACOS_FRAMEWORK_SCHEME" RUN_TESTS="NO" BUILD_EXAMPLE="NO" SDK="macosx10.15"
+  
+script:
+  - set -o pipefail
+  - xcodebuild -version
+  - xcodebuild -showsdks
+  
+  - xcodebuild -workspace "$WORKSPACE" -list
+  
+  - xcodebuild -workspace "$WORKSPACE" -scheme "$SCHEME" -destination "$DESTINATION" -sdk "$SDK" -configuration Release ONLY_ACTIVE_ARCH=NO build | xcpretty;
+  
+  - if [ $RUN_TESTS == "YES" ]; then
+     xcodebuild -workspace "$WORKSPACE" -scheme "$TEST_SCHEME" -destination "$DESTINATION" -sdk "$SDK" -configuration Release ONLY_ACTIVE_ARCH=NO ENABLE_TESTABILITY=YES test | xcpretty;
+     else
+     xcodebuild -workspace "$WORKSPACE" -scheme "$SCHEME" -destination "$DESTINATION" -sdk "$SDK" -configuration Release ONLY_ACTIVE_ARCH=NO build | xcpretty;
+    fi
+    
+  - if [ $BUILD_EXAMPLE == "YES" ]; then
+     xcodebuild -workspace "$WORKSPACE" -scheme "$EXAMPLE_SCHEME" -destination "$DESTINATION" -sdk "$SDK" -configuration Debug ONLY_ACTIVE_ARCH=NO build | xcpretty;
+    fi
